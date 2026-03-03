@@ -1,8 +1,11 @@
 <template>
   <div class="nr">
     <h1 class="nr__title">
-      Register a new <strong>Musical Work</strong>
+      Neighbouring Rights <strong>Registration</strong>
     </h1>
+    <p class="nr__subtitle">
+      Register your sound recordings with collection societies worldwide. We'll handle the claims and collect neighbouring rights royalties on your behalf.
+    </p>
 
     <StepIndicator
       :current-step="currentStep"
@@ -11,11 +14,6 @@
 
     <!-- Step 1: Pick a Release -->
     <template v-if="currentStep === 'pick-release'">
-      <div class="nr__step-header">
-        <h2 class="nr__step-title">Pick a <strong>release</strong></h2>
-        <p class="nr__step-desc">Choose a release to register tracks for neighbouring rights.</p>
-      </div>
-
       <ReleaseList
         :releases="filteredReleases"
         :selected-release-id="selectedRelease?.id ?? null"
@@ -241,6 +239,15 @@ const handleRegisterTrack = (trackId: string) => {
     line-height: 1.2;
 
     strong { font-weight: 700; }
+  }
+
+  &__subtitle {
+    font-family: $font-satoshi;
+    font-size: $text-body;
+    color: var(--ditto-grey);
+    margin-bottom: 2rem;
+    max-width: 40rem;
+    line-height: 1.6;
   }
 
   &__step-header {

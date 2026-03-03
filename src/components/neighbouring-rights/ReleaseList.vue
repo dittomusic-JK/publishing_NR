@@ -1,8 +1,10 @@
 <template>
   <div class="rl">
-    <div class="rl__filters">
-      <span class="rl__filter-label">Filter by:</span>
-      <div class="rl__filter-dropdown">
+    <div class="rl__toolbar">
+      <h2 class="rl__section-title">Pick a <strong>release</strong></h2>
+      <div class="rl__filters">
+        <span class="rl__filter-label">Filter by:</span>
+        <div class="rl__filter-dropdown">
         <CustomDropdown
           :model-value="artistFilter"
           :options="['', ...artists]"
@@ -17,13 +19,23 @@
           placeholder="Release Type"
           @update:model-value="$emit('update:typeFilter', $event)"
         />
+        </div>
       </div>
+    </div>
+
+    <!-- Table header -->
+    <div class="rl__header">
+      <span class="rl__header-cell rl__header-cell--details">Details</span>
+      <span class="rl__header-cell rl__header-cell--artist">Artist</span>
+      <span class="rl__header-cell rl__header-cell--type">Type</span>
+      <span class="rl__header-cell rl__header-cell--progress">Registration</span>
+      <span class="rl__header-cell rl__header-cell--action"></span>
     </div>
 
     <!-- List -->
     <div class="rl__list">
       <div
-        v-for="release in releases"
+        v-for="(release, index) in releases"
         :key="release.id"
         class="rl__row"
         role="button"
@@ -35,8 +47,10 @@
 
         <div class="rl__info">
           <h3 class="rl__title">{{ release.title }}</h3>
-          <p class="rl__artist">{{ release.artist }}</p>
+          <p class="rl__track-count">{{ release.tracks.length }} {{ release.tracks.length === 1 ? 'Track' : 'Tracks' }}</p>
         </div>
+
+        <span class="rl__artist">{{ release.artist }}</span>
 
         <span class="rl__type-badge">{{ release.type }}</span>
 
@@ -109,12 +123,27 @@ const ringOffset = (release: Release): number => {
 @use '@/styles/mixins' as *;
 
 .rl {
+  &__toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  &__section-title {
+    font-family: $font-poppins;
+    font-size: $text-h3;
+    font-weight: 400;
+    color: var(--blue);
+    line-height: 1.3;
+
+    strong { font-weight: 700; }
+  }
+
   &__filters {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    justify-content: flex-end;
-    margin-bottom: 1.5rem;
   }
 
   &__filter-label {
@@ -127,18 +156,54 @@ const ringOffset = (release: Release): number => {
     min-width: 10rem;
   }
 
+  // ── Table header ──
+  &__header,
+  &__row {
+    display: grid;
+    grid-template-columns: 4rem 1fr 9rem 5rem 7rem 5.5rem;
+    gap: 1rem;
+    align-items: center;
+    padding: 0.625rem 1.25rem;
+  }
+
+  &__header {
+    border-bottom: 1px solid var(--faded-grey);
+  }
+
+  &__header-cell {
+    font-family: $font-satoshi;
+    font-size: $text-xs;
+    font-weight: 500;
+    color: var(--ditto-grey);
+    white-space: nowrap;
+
+    &--details {
+      grid-column: 1 / 3;
+    }
+
+    &--artist {
+      text-align: left;
+    }
+
+    &--type {
+      text-align: center;
+    }
+
+    &--progress {
+      text-align: center;
+    }
+
+    &--action {
+      text-align: center;
+    }
+  }
+
   &__list {
-    border-radius: $radius-card;
-    overflow: hidden;
     background: #fff;
   }
 
   &__row {
-    display: grid;
-    grid-template-columns: auto 1fr auto auto auto;
-    gap: 1rem;
-    align-items: center;
-    padding: 0.75rem 1rem;
+    padding: 1.125rem 1.25rem;
     border-bottom: 1px solid var(--faded-grey);
     cursor: pointer;
     transition: background 0.15s;
@@ -148,16 +213,11 @@ const ringOffset = (release: Release): number => {
   }
 
   &__artwork {
-    width: 3rem;
-    height: 3rem;
-    border-radius: $radius-lg;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 0.5rem;
     object-fit: cover;
     flex-shrink: 0;
-
-    @include sm {
-      width: 3.5rem;
-      height: 3.5rem;
-    }
   }
 
   &__info {
@@ -165,28 +225,38 @@ const ringOffset = (release: Release): number => {
   }
 
   &__title {
-    font-size: $text-sm;
+    font-size: $text-body;
     font-weight: 700;
     color: var(--blue);
-    font-family: $font-poppins;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-
-    @include sm { font-size: $text-body; }
-  }
-
-  &__artist {
-    font-size: $text-xs;
-    color: var(--ditto-grey);
     font-family: $font-satoshi;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    line-height: 1.4;
+  }
+
+  &__track-count {
+    font-size: $text-sm;
+    font-weight: 500;
+    color: var(--brand-primary);
+    font-family: $font-satoshi;
+    line-height: 1.4;
+  }
+
+  &__artist {
+    font-size: $text-sm;
+    font-weight: 500;
+    color: var(--blue);
+    font-family: $font-satoshi;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+    justify-self: start;
   }
 
   &__type-badge {
-    padding: 0.125rem 0.5rem;
+    padding: 0.25rem 0.625rem;
     border-radius: $radius-button;
     background: var(--lighter-grey);
     font-size: $text-xs;
@@ -194,24 +264,22 @@ const ringOffset = (release: Release): number => {
     font-family: $font-satoshi;
     color: var(--ditto-grey);
     white-space: nowrap;
+    text-align: center;
   }
 
   &__progress {
-    display: none;
-
-    @include sm {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      flex-shrink: 0;
-    }
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    justify-content: center;
   }
 
   &__progress-text { text-align: right; }
 
   &__progress-num {
-    font-size: $text-sm;
-    font-weight: 600;
+    font-size: $text-body;
+    font-weight: 700;
     color: var(--blue);
     font-family: $font-satoshi;
   }
@@ -225,6 +293,7 @@ const ringOffset = (release: Release): number => {
     font-size: 10px;
     color: var(--ditto-grey);
     font-family: $font-satoshi;
+    text-transform: lowercase;
   }
 
   &__ring {
@@ -236,18 +305,19 @@ const ringOffset = (release: Release): number => {
   }
 
   &__select-btn {
-    padding: 0.375rem 0.75rem;
-    border: 1px solid rgba($color-brand-primary, 0.4);
+    padding: 0.375rem 1rem;
+    border: 1px solid var(--faded-grey);
     border-radius: $radius-button;
-    font-size: $text-xs;
+    font-size: $text-sm;
     font-weight: 500;
     font-family: $font-satoshi;
-    color: var(--brand-primary);
-    transition: border-color 0.15s, background 0.15s;
+    color: var(--ditto-grey);
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
 
     &:hover {
       border-color: var(--brand-primary);
-      background: rgba($color-brand-primary, 0.05);
+      color: var(--brand-primary);
+      background: rgba($color-brand-primary, 0.04);
     }
   }
 
