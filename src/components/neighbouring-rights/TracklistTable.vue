@@ -57,43 +57,14 @@
       <!-- Expanded detail (2-column layout) -->
       <div v-if="expandedTrackId === track.id" class="tl__detail">
         <div class="tl__detail-grid">
-          <!-- Left column: societies + performers -->
+          <!-- Left column: societies info + performers -->
           <div class="tl__detail-left">
             <div class="tl__societies">
-              <div class="tl__section-header">
-                <div>
-                  <h4 class="tl__section-title">Societies</h4>
-                  <p class="tl__section-desc">
-                    {{ isDraft(track) ? 'Select which societies to register with' : 'Registered with the following societies' }}
-                  </p>
-                </div>
-                <button
-                  class="tl__select-all"
-                  @click="handleSelectAll(track)"
-                >
-                  {{ allSocietiesSelected(track) ? 'Deselect all' : 'Select all' }}
-                </button>
-              </div>
-              <div class="tl__societies-grid">
-                <SocietyCard
-                  v-for="society in societies"
-                  :key="society.id"
-                  :society="society"
-                  :is-selected="track.selectedSocieties.includes(society.id)"
-                  @toggle="$emit('toggleSociety', track.id, society.id)"
-                />
-              </div>
-
-              <!-- Auto-submit opt-in -->
-              <label class="tl__auto-submit">
-                <input
-                  type="checkbox"
-                  class="tl__auto-submit-check"
-                  :checked="track.autoSubmitNewSocieties"
-                  @change="$emit('toggleAutoSubmit', track.id)"
-                />
-                <span class="tl__auto-submit-label">Automatically register with new societies added in the future</span>
-              </label>
+              <h4 class="tl__section-title">Societies</h4>
+              <p class="tl__section-desc">
+                We'll register your music to earn royalties with various societies across the world.
+                <a href="#" class="tl__societies-link" @click.prevent>More info</a>
+              </p>
             </div>
 
             <PerformerForm
@@ -119,13 +90,6 @@
           >
             Register Track
           </button>
-          <button
-            v-else-if="hasNewSocieties(track)"
-            class="tl__register-btn tl__register-btn--secondary"
-            @click="$emit('registerTrack', track.id)"
-          >
-            Register with Additional Societies
-          </button>
         </div>
       </div>
     </div>
@@ -134,24 +98,19 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Track, Society, Performer, RegistrationStatus } from '../../types'
-import SocietyCard from './SocietyCard.vue'
+import type { Track, Performer, RegistrationStatus } from '../../types'
 import PerformerForm from './PerformerForm.vue'
 import SplitsDisplay from './SplitsDisplay.vue'
 
 const props = defineProps<{
   tracks: Track[]
-  societies: Society[]
   expandedTrackId: string | null
 }>()
 
 const emit = defineEmits<{
   toggleTrack: [trackId: string]
-  toggleSociety: [trackId: string, societyId: string]
-  selectAllSocieties: [trackId: string, selectAll: boolean]
   updatePerformers: [trackId: string, performers: Performer[]]
   registerTrack: [trackId: string]
-  toggleAutoSubmit: [trackId: string]
 }>()
 
 const isDraft = (track: Track) => track.registrationStatus === 'draft'
@@ -165,23 +124,7 @@ const statusLabel = (status: RegistrationStatus): string => {
   }
 }
 
-const allSocietiesSelected = (track: Track): boolean => {
-  return props.societies.every(s => track.selectedSocieties.includes(s.id))
-}
-
-const handleSelectAll = (track: Track) => {
-  emit('selectAllSocieties', track.id, !allSocietiesSelected(track))
-}
-
-// For non-draft tracks: check if user has selected societies not yet submitted
-const hasNewSocieties = (track: Track): boolean => {
-  // In a real app you'd compare against originally-registered societies
-  // For demo, just check if any societies are selected on a non-draft track
-  return !isDraft(track) && track.selectedSocieties.length > 0
-}
-
 const canRegister = (track: Track): boolean => {
-  if (track.selectedSocieties.length === 0) return false
   const hasValidPerformer = track.performers.some(p => p.name.trim() && p.role)
   return hasValidPerformer
 }
@@ -410,69 +353,16 @@ const canRegister = (track: Track): boolean => {
   }
 
   &__societies {
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
   }
 
-  &__section-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
+  &__societies-link {
+    color: var(--brand-primary);
+    font-weight: 600;
+    text-decoration: none;
+    transition: opacity 0.15s;
 
-  &__select-all {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border: 1px solid var(--faded-grey);
-    border-radius: $radius-button;
-    font-family: $font-satoshi;
-    font-size: $text-sm;
-    font-weight: 500;
-    color: var(--ditto-grey);
-    background: transparent;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: border-color 0.15s, color 0.15s;
-
-    &:hover {
-      border-color: var(--brand-primary);
-      color: var(--brand-primary);
-    }
-  }
-
-  &__societies-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
-  }
-
-  &__auto-submit {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-top: 1rem;
-    cursor: pointer;
-  }
-
-  &__auto-submit-check {
-    appearance: auto;
-    -webkit-appearance: checkbox;
-    width: 1rem;
-    height: 1rem;
-    accent-color: var(--brand-primary);
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-
-  &__auto-submit-label {
-    font-family: $font-satoshi;
-    font-size: $text-xs;
-    color: var(--ditto-grey);
-    line-height: 1.3;
+    &:hover { opacity: 0.8; }
   }
 
   &__register-row {

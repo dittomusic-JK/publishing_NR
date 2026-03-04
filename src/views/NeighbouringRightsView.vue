@@ -37,14 +37,10 @@
 
       <TracklistTable
         :tracks="selectedRelease.tracks"
-        :societies="societies"
         :expanded-track-id="expandedTrackId"
         @toggle-track="toggleTrack"
-        @toggle-society="handleToggleSociety"
-        @select-all-societies="handleSelectAllSocieties"
         @update-performers="handleUpdatePerformers"
         @register-track="handleRegisterTrack"
-        @toggle-auto-submit="handleToggleAutoSubmit"
       />
     </template>
   </div>
@@ -52,7 +48,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { Release, Society, WizardStep, Performer } from '../types'
+import type { Release, WizardStep, Performer } from '../types'
 import StepIndicator from '../components/neighbouring-rights/StepIndicator.vue'
 import ReleaseList from '../components/neighbouring-rights/ReleaseList.vue'
 import SelectedRelease from '../components/neighbouring-rights/SelectedRelease.vue'
@@ -64,15 +60,7 @@ const expandedTrackId = ref<string | null>(null)
 const artistFilter = ref('')
 const typeFilter = ref('')
 
-// Societies data
-const societies: Society[] = [
-  { id: 'ppl', name: 'PPL', logo: '/images/societies/ppl.svg', infoUrl: 'https://www.ppluk.com' },
-  { id: 'soundexchange', name: 'SoundExchange', logo: '/images/societies/sound-exchange.svg', infoUrl: 'https://www.soundexchange.com' },
-  { id: 'ppca', name: 'PPCA', logo: '/images/societies/ppca.svg', infoUrl: 'https://www.ppca.com.au' },
-  { id: 'sampra', name: 'Sampra', logo: '/images/societies/sampra.svg', infoUrl: 'https://www.sampra.org.za' },
-]
-
-// Helper: create default performers from track artist (simulates RB data)
+// Helper
 const makeDefaultPerformers = (artist: string): Performer[] => [
   { id: `rb_${artist.replace(/\s/g, '_').toLowerCase()}`, name: artist, performerType: 'featured', role: '', isFromRB: true },
 ]
@@ -179,39 +167,11 @@ const toggleTrack = (trackId: string) => {
   expandedTrackId.value = expandedTrackId.value === trackId ? null : trackId
 }
 
-const handleToggleSociety = (trackId: string, societyId: string) => {
-  if (!selectedRelease.value) return
-  const track = selectedRelease.value.tracks.find(t => t.id === trackId)
-  if (!track) return
-
-  const idx = track.selectedSocieties.indexOf(societyId)
-  if (idx > -1) {
-    track.selectedSocieties.splice(idx, 1)
-  } else {
-    track.selectedSocieties.push(societyId)
-  }
-}
-
 const handleUpdatePerformers = (trackId: string, performers: Performer[]) => {
   if (!selectedRelease.value) return
   const track = selectedRelease.value.tracks.find(t => t.id === trackId)
   if (track) {
     track.performers = performers
-  }
-}
-
-const handleSelectAllSocieties = (trackId: string, selectAll: boolean) => {
-  if (!selectedRelease.value) return
-  const track = selectedRelease.value.tracks.find(t => t.id === trackId)
-  if (!track) return
-  track.selectedSocieties = selectAll ? societies.map(s => s.id) : []
-}
-
-const handleToggleAutoSubmit = (trackId: string) => {
-  if (!selectedRelease.value) return
-  const track = selectedRelease.value.tracks.find(t => t.id === trackId)
-  if (track) {
-    track.autoSubmitNewSocieties = !track.autoSubmitNewSocieties
   }
 }
 
