@@ -41,18 +41,27 @@
         @toggle-track="toggleTrack"
         @update-performers="handleUpdatePerformers"
         @register-track="handleRegisterTrack"
+        @dirty-change="handleDirtyChange"
       />
     </template>
+
+    <UnsavedChangesModal
+      v-if="showUnsavedChangesModal"
+      @save="handleSaveAndLeave"
+      @discard="handleDiscardAndLeave"
+      @cancel="handleCancelUnsavedChanges"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import type { Release, WizardStep, Performer } from '../types'
 import StepIndicator from '../components/neighbouring-rights/StepIndicator.vue'
 import ReleaseList from '../components/neighbouring-rights/ReleaseList.vue'
 import SelectedRelease from '../components/neighbouring-rights/SelectedRelease.vue'
 import TracklistTable from '../components/neighbouring-rights/TracklistTable.vue'
+import UnsavedChangesModal from '../components/neighbouring-rights/UnsavedChangesModal.vue'
 
 const currentStep = ref<WizardStep>('pick-release')
 const selectedRelease = ref<Release | null>(null)
@@ -163,10 +172,98 @@ const handleGoToStep = (step: WizardStep) => {
   }
 }
 
-const toggleTrack = (trackId: string) => {
-  expandedTrackId.value = expandedTrackId.value === trackId ? null : trackId
+// ── Unsaved changes state ──
+const dirtyForms = reactive<Record<string, boolean>>({})
+const pendingTrackSwitch = ref<string | null>(null)
+const showUnsavedChangesModal = ref(false)
+const performerSnapshots = reactive<Record<string, string>>({})
+
+const hasUnsavedChanges = computed(() => Object.values(dirtyForms).some(Boolean))
+
+const snapshotPerformers = (trackId: string) => {
+  if (!selectedRelease.value) return
+  const track = selectedRelease.value.tracks.find(t => t.id === trackId)
+  if (track) {
+    performerSnapshots[trackId] = JSON.stringify(track.performers)
+  }
 }
 
+const handleDirtyChange = (trackId: string, isDirty: boolean) => {
+  dirtyForms[trackId] = isDirty
+}
+
+const toggleTrack = (trackId: string) => {
+  const currentId = expandedTrackId.value
+
+  // Closing the current track or opening with nothing expanded
+  if (currentId === trackId || !currentId) {
+    if (!currentId && trackId) snapshotPerformers(trackId)
+    expandedTrackId.value = currentId === trackId ? null : trackId
+    return
+  }
+
+  // Current track is dirty → show modal instead of switching
+  if (dirtyForms[currentId]) {
+    pendingTrackSwitch.value = trackId
+    showUnsavedChangesModal.value = true
+    return
+  }
+
+  // Not dirty, switch normally
+  snapshotPerformers(trackId)
+  expandedTrackId.value = trackId
+}
+
+const completePendingSwitch = () => {
+  const nextId = pendingTrackSwitch.value
+  pendingTrackSwitch.value = null
+  if (nextId) {
+    snapshotPerformers(nextId)
+    expandedTrackId.value = nextId
+  }
+}
+
+const handleSaveAndLeave = () => {
+  // Performers are already live-updated, so "save" just accepts current state
+  const currentId = expandedTrackId.value
+  if (currentId) {
+    dirtyForms[currentId] = false
+    snapshotPerformers(currentId) // refresh snapshot to current
+  }
+  showUnsavedChangesModal.value = false
+  completePendingSwitch()
+}
+
+const handleDiscardAndLeave = () => {
+  const currentId = expandedTrackId.value
+  if (currentId && selectedRelease.value) {
+    const track = selectedRelease.value.tracks.find(t => t.id === currentId)
+    if (track && performerSnapshots[currentId]) {
+      track.performers = JSON.parse(performerSnapshots[currentId])
+    }
+    dirtyForms[currentId] = false
+  }
+  showUnsavedChangesModal.value = false
+  completePendingSwitch()
+}
+
+const handleCancelUnsavedChanges = () => {
+  pendingTrackSwitch.value = null
+  showUnsavedChangesModal.value = false
+}
+
+// ── Browser beforeunload guard ──
+const onBeforeUnload = (e: BeforeUnloadEvent) => {
+  if (hasUnsavedChanges.value) {
+    e.preventDefault()
+    e.returnValue = ''
+  }
+}
+
+onMounted(() => window.addEventListener('beforeunload', onBeforeUnload))
+onBeforeUnmount(() => window.removeEventListener('beforeunload', onBeforeUnload))
+
+// ── Track handlers ──
 const handleUpdatePerformers = (trackId: string, performers: Performer[]) => {
   if (!selectedRelease.value) return
   const track = selectedRelease.value.tracks.find(t => t.id === trackId)

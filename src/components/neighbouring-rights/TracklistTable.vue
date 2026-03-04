@@ -71,6 +71,7 @@
               :performers="track.performers"
               :readonly="!isDraft(track)"
               @update="(performers) => $emit('updatePerformers', track.id, performers)"
+              @dirty-change="(isDirty) => $emit('dirtyChange', track.id, isDirty)"
             />
           </div>
 
@@ -111,6 +112,7 @@ const emit = defineEmits<{
   toggleTrack: [trackId: string]
   updatePerformers: [trackId: string, performers: Performer[]]
   registerTrack: [trackId: string]
+  dirtyChange: [trackId: string, isDirty: boolean]
 }>()
 
 const isDraft = (track: Track) => track.registrationStatus === 'draft'

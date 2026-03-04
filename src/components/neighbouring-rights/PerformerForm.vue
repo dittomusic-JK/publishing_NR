@@ -71,7 +71,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, withDefaults } from 'vue'
+import { computed, ref, watch, withDefaults } from 'vue'
 import type { Performer, PerformerType } from '../../types'
 import { PPL_PERFORMER_ROLES } from '../../types'
 import CustomDropdown from './CustomDropdown.vue'
@@ -85,7 +85,27 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   update: [performers: Performer[]]
+  dirtyChange: [isDirty: boolean]
 }>()
+
+// Snapshot initial performers to detect changes
+const initialSnapshot = ref(JSON.stringify(props.performers))
+
+// Reset snapshot when the track changes (performers prop gets a fresh array)
+watch(() => props.performers, (newVal, oldVal) => {
+  // If the identity of the array changed (different track), reset snapshot
+  if (newVal !== oldVal) {
+    initialSnapshot.value = JSON.stringify(newVal)
+  }
+})
+
+const isDirty = computed(() => {
+  return JSON.stringify(props.performers) !== initialSnapshot.value
+})
+
+watch(isDirty, (val) => {
+  emit('dirtyChange', val)
+})
 
 // Map PPL role groups for the dropdown
 const pplGroups = PPL_PERFORMER_ROLES.map(g => ({
