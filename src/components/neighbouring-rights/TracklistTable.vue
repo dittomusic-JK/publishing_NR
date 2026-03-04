@@ -371,8 +371,6 @@ const canRegister = (track: Track): boolean => {
     display: flex;
     justify-content: flex-end;
     margin-top: 1.5rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--faded-grey);
   }
 
   &__register-btn {

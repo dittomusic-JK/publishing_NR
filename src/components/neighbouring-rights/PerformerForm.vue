@@ -204,9 +204,6 @@ const removePerformer = (id: string) => {
     gap: 0.75rem;
     align-items: center;
     padding: 0.5rem 0;
-    border-bottom: 1px solid var(--faded-grey);
-
-    &:last-child { border-bottom: 0; }
 
     @media (max-width: #{$breakpoint-sm - 1px}) {
       grid-template-columns: 1fr;
